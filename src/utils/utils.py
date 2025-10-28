@@ -7,18 +7,6 @@ import numpy as np
 import torch.nn.functional as F
 import torch
 
-tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
-
-
-def tokenizer_for_nn(object):
-    tokenized = tokenizer(
-        object,
-        truncation=True,
-        padding="max_length",
-        return_tensors="pt",  # если хочешь сразу тензоры PyTorch
-    )
-    return {k: v.squeeze(0) for k, v in tokenized.items()}
-
 
 def similarity_anime(genres1, genres2):
     set1 = set([g.strip().lower() for g in genres1.split(",") if g.strip()])
@@ -63,17 +51,9 @@ def move_to_device(item_1, item_2, y, device):
     return item_1, item_2, y
 
 
-def get_anime_search_table(titles, synopsis):
-    anime = []
-    for idx in range(len(titles)):
-        anime.append((titles[idx], synopsis[idx]))
-    anime_table = pd.DataFrame(anime, columns=["title", "synopsis"])
-    anime_table.to_parquet(
-        "data/faiss_anime_search.parquet", index=False, compression="gzip"
-    )
-
-
 def save_embedding_of_all_anime():
+    tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
+
     class PredictionBert(torch.nn.Module):
         def __init__(self):
             super().__init__()
@@ -87,6 +67,7 @@ def save_embedding_of_all_anime():
             x = self.linear(x)  # [batch, 256]
             x = F.normalize(x, p=2, dim=1)  # нормализация (единичная длина вектора)
             return x
+
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     filepath = os.path.join(BASE_DIR, "../../data/embeddings/anime_recommender.pt")
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -95,7 +76,9 @@ def save_embedding_of_all_anime():
     model.load_state_dict(torch.load(filepath, map_location=device))
     model.eval()
 
-    df = pd.read_parquet(os.path.join(BASE_DIR, "../../data/processed/parsed_anime_data.parquet"))
+    df = pd.read_parquet(
+        os.path.join(BASE_DIR, "../../data/processed/parsed_anime_data.parquet")
+    )
 
     anime_texts = [f"{t}. {s}" for t, s in zip(df["title"], df["synopsis"])]
     anime_titles = df["title"].tolist()
@@ -116,4 +99,7 @@ def save_embedding_of_all_anime():
             embeddings_list.append(emb.cpu().numpy())
 
     embeddings_matrix = np.vstack(embeddings_list).astype("float32")
-    np.save(os.path.join(BASE_DIR, "../../data/embeddings/embedding_of_all_anime.npy"), embeddings_matrix)
+    np.save(
+        os.path.join(BASE_DIR, "../../data/embeddings/embedding_of_all_anime.npy"),
+        embeddings_matrix,
+    )

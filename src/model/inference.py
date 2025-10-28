@@ -22,9 +22,12 @@ class PredictionBert(torch.nn.Module):
         x = F.normalize(x, p=2, dim=1)  # нормализация (единичная длина вектора)
         return x
 
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 filepath = os.path.join(BASE_DIR, "../../data/embeddings/anime_recommender.pt")
-filepath_anime = os.path.join(BASE_DIR, "../../data/processed/parsed_anime_data.parquet")
+filepath_anime = os.path.join(
+    BASE_DIR, "../../data/processed/parsed_anime_data.parquet"
+)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 model = PredictionBert().to(device)
@@ -33,10 +36,12 @@ model.eval()
 
 tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
 
-embeddings_matrix = np.load(os.path.join(BASE_DIR,"../../data/embeddings/embedding_of_all_anime.npy"))
+embeddings_matrix = np.load(
+    os.path.join(BASE_DIR, "../../data/embeddings/embedding_of_all_anime.npy")
+)
 
 anime = pd.read_parquet(filepath_anime)
-anime_titles = anime['title']
+anime_titles = anime["title"]
 
 dim = embeddings_matrix.shape[1]
 index = faiss.IndexFlatIP(dim)
