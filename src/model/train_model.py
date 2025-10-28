@@ -1,3 +1,5 @@
+import os.path
+
 import torch
 from torch import nn, no_grad
 from transformers import AutoTokenizer, BertModel
@@ -9,7 +11,8 @@ from tqdm import tqdm
 import torch.nn.functional as F
 from transformers import get_linear_schedule_with_warmup
 
-filename = "../../data/processed/anime_pairs.parquet"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+filename = os.path.join(BASE_DIR, "../../data/processed/anime_pairs.parquet")
 
 df = pd.read_parquet(filename)
 
@@ -151,4 +154,4 @@ for epoch in range(num_epochs):
         f"\nEpoch [{epoch+1}/{num_epochs}]  Train Loss: {train_loss:.4f}  |  Val Loss: {val_loss:.4f}"
     )
 
-torch.save(model.state_dict(), "../model/anime_recommender.pt")
+torch.save(model.state_dict(), os.path.join(BASE_DIR, "../model/anime_recommender.pt"))

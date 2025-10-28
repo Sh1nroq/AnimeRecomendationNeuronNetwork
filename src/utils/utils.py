@@ -1,5 +1,5 @@
 import random
-
+import os
 from pandas.core.interchange.dataframe_protocol import DataFrame
 from transformers import AutoTokenizer, BertModel
 import pandas as pd
@@ -87,14 +87,15 @@ def save_embedding_of_all_anime():
             x = self.linear(x)  # [batch, 256]
             x = F.normalize(x, p=2, dim=1)  # нормализация (единичная длина вектора)
             return x
-
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    filepath = os.path.join(BASE_DIR, "../../data/embeddings/anime_recommender.pt")
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    filepath = "C:\\Users\\dorov\\AnimeRecomendation\\data\\embeddings\\anime_recommender.pt"
+
     model = PredictionBert().to(device)
     model.load_state_dict(torch.load(filepath, map_location=device))
     model.eval()
 
-    df = pd.read_parquet("C:\\Users\\dorov\\AnimeRecomendation\\data\\processed\\faiss_anime_search.parquet")
+    df = pd.read_parquet(os.path.join(BASE_DIR, "../../data/processed/parsed_anime_data.parquet"))
 
     anime_texts = [f"{t}. {s}" for t, s in zip(df["title"], df["synopsis"])]
     anime_titles = df["title"].tolist()
@@ -115,4 +116,4 @@ def save_embedding_of_all_anime():
             embeddings_list.append(emb.cpu().numpy())
 
     embeddings_matrix = np.vstack(embeddings_list).astype("float32")
-    np.save("C:\\Users\\dorov\\AnimeRecomendation\\data\\embeddings\\embedding_of_all_anime.npy", embeddings_matrix)
+    np.save(os.path.join(BASE_DIR, "../../data/embeddings/embedding_of_all_anime.npy"), embeddings_matrix)

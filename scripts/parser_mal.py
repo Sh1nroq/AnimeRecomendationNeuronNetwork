@@ -4,7 +4,7 @@ import json
 import os
 
 os.makedirs("../data", exist_ok=True)
-
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # pages 1165 by date 10.10.2025
 page = 1
 results = []
@@ -30,5 +30,5 @@ while True:
     page += 1
     sleep(1)
 
-with open("../data/anime.json", "w", encoding="utf-8") as f:
+with open(os.path.join(BASE_DIR, "../data/anime.json"), "w", encoding="utf-8") as f:
     json.dump(results, f, ensure_ascii=False, indent=4)

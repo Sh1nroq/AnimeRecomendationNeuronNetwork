@@ -1,3 +1,5 @@
+import os.path
+
 import faiss
 import pandas as pd
 import torch
@@ -20,9 +22,9 @@ class PredictionBert(torch.nn.Module):
         x = F.normalize(x, p=2, dim=1)  # нормализация (единичная длина вектора)
         return x
 
-
-filepath = "../../data/embeddings/anime_recommender.pt"
-filepath_anime = "../../data/processed/faiss_anime_search.parquet"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+filepath = os.path.join(BASE_DIR, "../../data/embeddings/anime_recommender.pt")
+filepath_anime = os.path.join(BASE_DIR, "../../data/processed/parsed_anime_data.parquet")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 model = PredictionBert().to(device)
@@ -31,7 +33,7 @@ model.eval()
 
 tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
 
-embeddings_matrix = np.load("../../data/embeddings/embedding_of_all_anime.npy")
+embeddings_matrix = np.load(os.path.join(BASE_DIR,"../../data/embeddings/embedding_of_all_anime.npy"))
 
 anime = pd.read_parquet(filepath_anime)
 anime_titles = anime['title']
@@ -41,7 +43,7 @@ index = faiss.IndexFlatIP(dim)
 index.add(embeddings_matrix)
 print(f"Добавлено {index.ntotal} аниме в FAISS индекс")
 
-query = "For the agent known as Twilight, no order is too tall if it is for the sake of peace. Operating as Westalis' master spy, Twilight works tirelessly to prevent extremists from sparking a war with neighboring country Ostania. For his latest mission, he must investigate Ostanian politician Donovan Desmond by infiltrating his son's school: the prestigious Eden Academy. Thus, the agent faces the most difficult task of his career: get married, have a child, and play family. Twilight, or Loid Forger, quickly adopts the unassuming orphan Anya to play the role of a six-year-old daughter and prospective Eden Academy student. For a wife, he comes across Yor Briar, an absent-minded office worker who needs a pretend partner of her own to impress her friends. However, Loid is not the only one with a hidden nature. Yor moonlights as the lethal assassin Thorn Princess. For her, marrying Loid creates the perfect cover. Meanwhile, Anya is not the ordinary girl she appears to be; she is an esper, the product of secret experiments that allow her to read minds. Although she uncovers their true identities, Anya is thrilled that her new parents are cool secret agents! She would never tell them, of course. That would ruin the fun. Under the guise of The Forgers, the spy, the assassin, and the esper must act as a family while carrying out their own agendas. Although these liars and misfits are only playing parts, they soon find that family is about far more than blood relations."
+query = "Ichigo Kurosaki is an ordinary high schooler—until his family is attacked by a Hollow, a corrupt spirit that seeks to devour human souls. It is then that he meets a Soul Reaper named Rukia Kuchiki, who gets injured while protecting Ichigo's family from the assailant. To save his family, Ichigo accepts Rukia's offer of taking her powers and becomes a Soul Reaper as a result."
 
 tokens = tokenizer(
     query, return_tensors="pt", truncation=True, padding="max_length", max_length=128
