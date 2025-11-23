@@ -1,5 +1,5 @@
 import torch
-
+import random
 
 class MyAnimeDataset(torch.utils.data.Dataset):
     def __init__(self, data, tokenizer):

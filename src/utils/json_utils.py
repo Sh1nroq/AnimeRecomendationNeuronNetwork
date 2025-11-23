@@ -15,15 +15,21 @@ def json_parser(filepath: str):
         title = record.get("title", "")
         genres = record.get("genres", [])
         synopsis = record.get("synopsis", "")
+        type = record.get("type", "")
         score = record.get("score", [])
-        parsed_info.append(
-            (
-                title,
-                [g["name"] for g in genres],
-                synopsis,
-                score,
+
+        if synopsis is not None:
+            synopsis = synopsis.replace("\n\n[Written by MAL Rewrite]", "")
+
+        if score is not None and score > 6.5 and type in ("TV","Movie"):
+            parsed_info.append(
+                (
+                    title,
+                    [g["name"] for g in genres],
+                    synopsis,
+                    score,
+                )
             )
-        )
     DIR_BASE = os.path.dirname(os.path.abspath(__file__))
     df = pd.DataFrame(parsed_info, columns=["title", "genres", "synopsis", "score"])
     df.to_parquet(
@@ -31,3 +37,8 @@ def json_parser(filepath: str):
         index=False,
         compression="gzip",
     )
+
+
+
+
+

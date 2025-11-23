@@ -1,8 +1,9 @@
 import os.path
-
+from src.utils.utils import get_anime
 import faiss
 import pandas as pd
 import torch
+from torch import nn
 from transformers import AutoTokenizer, BertModel
 import torch.nn.functional as F
 import numpy as np
@@ -12,19 +13,23 @@ class PredictionBert(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.bert_model = BertModel.from_pretrained("google-bert/bert-base-uncased")
-        self.dropout = torch.nn.Dropout(0.3)
-        self.linear = torch.nn.Linear(768, 256)
+        self.head = nn.Sequential(
+            nn.Dropout(0.3),
+            nn.Linear(768, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.BatchNorm1d(256)
+        )
 
     def forward(self, **x):
         outputs = self.bert_model(**x)
-        x = self.dropout(outputs.pooler_output)  # [batch, 768]
-        x = self.linear(x)  # [batch, 256]
-        x = F.normalize(x, p=2, dim=1)  # нормализация (единичная длина вектора)
+        x = outputs.pooler_output
+        x = self.head(x)
+        x = F.normalize(x, p=2, dim=1)
         return x
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-filepath = os.path.join(BASE_DIR, "../../data/embeddings/anime_recommender.pt")
+filepath = os.path.join(BASE_DIR, "../../data/embeddings/anime_recommender_alpha.pt")
 filepath_anime = os.path.join(
     BASE_DIR, "../../data/processed/parsed_anime_data.parquet"
 )
@@ -48,18 +53,24 @@ index = faiss.IndexFlatIP(dim)
 index.add(embeddings_matrix)
 print(f"Добавлено {index.ntotal} аниме в FAISS индекс")
 
-query = "Ichigo Kurosaki is an ordinary high schooler—until his family is attacked by a Hollow, a corrupt spirit that seeks to devour human souls. It is then that he meets a Soul Reaper named Rukia Kuchiki, who gets injured while protecting Ichigo's family from the assailant. To save his family, Ichigo accepts Rukia's offer of taking her powers and becomes a Soul Reaper as a result."
+name = 'Teekyuu'
+query = get_anime(name, filepath_anime, 'synopsis')
 
 tokens = tokenizer(
-    query, return_tensors="pt", truncation=True, padding="max_length", max_length=128
+    query, return_tensors="pt", truncation=True
 ).to(device)
 
 with torch.no_grad():
     query_emb = model(**tokens).cpu().numpy()
 
-distances, indices = index.search(query_emb, k=5)
+distances, indices = index.search(query_emb, k=100)
+
+genres_query = get_anime(name, filepath_anime, 'genres')
+title = []
 
 print("\nРекомендации по запросу:")
 for rank, (idx, dist) in enumerate(zip(indices[0], distances[0]), start=1):
-    title = anime_titles[idx]
-    print(f"{rank}. {title} (similarity={dist:.4f})")
+    genres_anime = get_anime(anime_titles[idx], filepath_anime, 'genres')
+    if any(g in genres_query for g in genres_anime):
+        title = anime_titles[idx]
+        print(f"{rank}. {title} (similarity={dist:.4f})")
