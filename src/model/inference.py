@@ -53,7 +53,7 @@ index = faiss.IndexFlatIP(dim)
 index.add(embeddings_matrix)
 print(f"Добавлено {index.ntotal} аниме в FAISS индекс")
 
-name = 'Teekyuu'
+name = 'Gachiakuta'
 query = get_synopsis(name, filepath_anime)
 
 tokens = tokenizer(
@@ -70,10 +70,11 @@ anime_genres_map = dict(zip(anime["title"], anime["genres"]))
 
 print("\nРекомендации по запросу:")
 genres_query = anime_genres_map.get(name, [])
-
+num = 1
 for rank, (idx, dist) in enumerate(zip(indices[0], distances[0]), start=1):
     title = anime_titles[idx]
     genres_anime = anime_genres_map.get(title, [])
 
     if any(g in genres_query for g in genres_anime):
-        print(f"{rank}. {title} (similarity={dist:.4f})")
+        print(f"{num}. {title} (similarity={dist:.4f})")
+        num += 1
