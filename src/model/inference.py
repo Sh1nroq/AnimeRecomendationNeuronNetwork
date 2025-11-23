@@ -1,5 +1,5 @@
 import os.path
-from src.utils.utils import get_anime
+from src.utils.utils import get_synopsis
 import faiss
 import pandas as pd
 import torch
@@ -54,7 +54,7 @@ index.add(embeddings_matrix)
 print(f"Добавлено {index.ntotal} аниме в FAISS индекс")
 
 name = 'Teekyuu'
-query = get_anime(name, filepath_anime, 'synopsis')
+query = get_synopsis(name, filepath_anime)
 
 tokens = tokenizer(
     query, return_tensors="pt", truncation=True
@@ -65,12 +65,15 @@ with torch.no_grad():
 
 distances, indices = index.search(query_emb, k=100)
 
-genres_query = get_anime(name, filepath_anime, 'genres')
 title = []
+anime_genres_map = dict(zip(anime["title"], anime["genres"]))
 
 print("\nРекомендации по запросу:")
+genres_query = anime_genres_map.get(name, [])
+
 for rank, (idx, dist) in enumerate(zip(indices[0], distances[0]), start=1):
-    genres_anime = get_anime(anime_titles[idx], filepath_anime, 'genres')
+    title = anime_titles[idx]
+    genres_anime = anime_genres_map.get(title, [])
+
     if any(g in genres_query for g in genres_anime):
-        title = anime_titles[idx]
         print(f"{rank}. {title} (similarity={dist:.4f})")

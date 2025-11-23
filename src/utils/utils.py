@@ -175,7 +175,7 @@ def get_augmentation():
 
     print(f"Оригинал: {len(df)}, Итого: {len(final_df)}")
 
-def get_anime(name: str, filepath: str, key: str):
+def get_synopsis(name: str, filepath: str):
     anime_list = pd.read_parquet(filepath)
 
     anime = anime_list.loc[anime_list['title'] == name]
@@ -183,7 +183,7 @@ def get_anime(name: str, filepath: str, key: str):
     if anime.empty:
         raise ValueError(f"Anime '{name}' not found in dataset")
 
-    return anime.iloc[0][key]
+    return anime.iloc[0]['synopsis']
 
 
 # def filter(anime_idx:str, title_query):
